@@ -1,12 +1,13 @@
 services:
   voicebox:
-    build: .
+    image: ghcr.io/jamiepine/voicebox:${VOICEBOX_VERSION:-latest}
     container_name: voicebox
     restart: unless-stopped
 
     ports:
-      # Bind to localhost only for security
-      - "127.0.0.1:17493:17493"
+      # Publish on the configured remote-access interfaces.
+      - "${VOICEBOX_BIND_IP:-127.0.0.1}:${VOICEBOX_WEB_PORT:-17493}:8000"
+      - "${VOICEBOX_LAN_BIND_IP:-192.168.1.2}:${VOICEBOX_WEB_PORT:-17493}:8000"
 
     volumes:
       # Bind-mount for generated audio (customize the host path as needed)
@@ -21,8 +22,9 @@ services:
       - huggingface-cache:/home/voicebox/.cache/huggingface
 
     environment:
-      - LOG_LEVEL=info
-      - NUMBA_CACHE_DIR=/tmp/numba_cache
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      NUMBA_CACHE_DIR: /tmp/numba_cache
+      HF_HUB_DISABLE_XET: ${HF_HUB_DISABLE_XET:-1}
 
     networks:
       - voicebox-net

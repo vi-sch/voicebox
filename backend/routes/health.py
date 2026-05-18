@@ -14,6 +14,7 @@ from .. import config, models
 from ..services import tts
 from ..database import get_db
 from ..utils.platform_detect import get_backend_type
+from ..utils.gpu import detect_backend_variant, format_torch_cuda_gpu_type
 
 router = APIRouter()
 
@@ -103,7 +104,7 @@ async def health():
 
     gpu_type = None
     if has_cuda:
-        gpu_type = f"CUDA ({torch.cuda.get_device_name(0)})"
+        gpu_type = format_torch_cuda_gpu_type(torch, torch.cuda.get_device_name(0))
     elif has_mps:
         gpu_type = "MPS (Apple Silicon)"
     elif backend_type == "mlx":
@@ -173,10 +174,8 @@ async def health():
         gpu_type=gpu_type,
         vram_used_mb=vram_used,
         backend_type=backend_type,
-        backend_variant=os.environ.get(
-            "VOICEBOX_BACKEND_VARIANT",
-            "cuda" if torch.cuda.is_available() else ("xpu" if has_xpu else "cpu"),
-        ),
+        backend_variant=os.environ.get("VOICEBOX_BACKEND_VARIANT")
+        or detect_backend_variant(torch, has_xpu=has_xpu),
         gpu_compatibility_warning=gpu_compat_warning,
     )
 

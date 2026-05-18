@@ -24,6 +24,7 @@ from .base import (
     model_load_progress,
     patch_chatterbox_f32,
 )
+from ..utils.torch_compat import ensure_torch_xpu_compat
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,8 @@ class ChatterboxTTSBackend:
             logger.info(f"Loading Chatterbox Multilingual TTS on {device}...")
 
             import torch
+
+            ensure_torch_xpu_compat(torch)
             from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
             if device == "cpu":

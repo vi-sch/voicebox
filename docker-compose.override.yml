@@ -1,0 +1,39 @@
+services:
+  voicebox:
+    image: voicebox-rocm:${VOICEBOX_VERSION:-v0.5.0}
+    pull_policy: build
+    build:
+      context: .
+      target: runtime-rocm
+      args:
+        # Vega 20/Radeon VII/Pro Vega II is gfx906. Keep PyTorch on ROCm 5.7,
+        # but use a slim Python base instead of AMD's very large rocm/pytorch image.
+        ROCM_RUNTIME_IMAGE: ${ROCM_RUNTIME_IMAGE:-python:3.10-slim-bookworm}
+        PYTORCH_ROCM_INDEX_URL: ${PYTORCH_ROCM_INDEX_URL:-https://download.pytorch.org/whl/rocm5.7}
+        PYTORCH_ROCM_VERSION: ${PYTORCH_ROCM_VERSION:-2.2.2}
+        TORCHVISION_ROCM_VERSION: ${TORCHVISION_ROCM_VERSION:-0.17.2}
+
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      VOICEBOX_BACKEND_VARIANT: rocm
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-9.0.6}
+
+    ports: !override
+      - "${VOICEBOX_BIND_IP:-0.0.0.0}:${VOICEBOX_WEB_PORT:-17493}:17493"
+
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+
+    group_add:
+      - "${HOST_VIDEO_GID:-44}"
+      - "${HOST_RENDER_GID:-991}"
+
+    ipc: host
+    shm_size: 8gb
+
+    cap_add:
+      - SYS_PTRACE
+
+    security_opt:
+      - seccomp:unconfined
